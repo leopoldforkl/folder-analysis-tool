@@ -470,11 +470,16 @@ class FolderAnalysisGUI:
                     temp_path = Path(temp_dir)
                     target_path = Path(self.target_folder)
                     
+                    # Create a subdirectory with the target folder's name
+                    target_folder_name = target_path.name
+                    analysis_root = temp_path / target_folder_name
+                    analysis_root.mkdir(exist_ok=True)
+                    
                     # Copy selected items to temporary structure
                     for item in self.selected_items:
                         if item.exists():
                             rel_path = item.relative_to(target_path)
-                            dest_path = temp_path / rel_path
+                            dest_path = analysis_root / rel_path
                             
                             if item.is_file():
                                 dest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -485,7 +490,7 @@ class FolderAnalysisGUI:
                                 for sub_item in item.rglob("*"):
                                     if self.config_manager.should_include_file(sub_item):
                                         sub_rel_path = sub_item.relative_to(target_path)
-                                        sub_dest_path = temp_path / sub_rel_path
+                                        sub_dest_path = analysis_root / sub_rel_path
                                         
                                         if sub_item.is_file():
                                             sub_dest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -496,7 +501,7 @@ class FolderAnalysisGUI:
                     
                     # Perform analysis on temporary structure
                     output_file = analyze_folder(
-                        target_folder=str(temp_path),
+                        target_folder=str(analysis_root),
                         output_folder=self.output_folder,
                         config_manager=self.config_manager
                     )
