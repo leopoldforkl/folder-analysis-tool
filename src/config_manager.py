@@ -13,7 +13,8 @@ class ConfigManager:
         "include_pycache": False,
         "output_to_console": True,
         "output_to_file": True,
-        "output_filename": "folder_structure.txt"
+        "output_filename": "folder_structure.txt",
+        "include_file_contents": []
     }
     
     def __init__(self, config_path: str = "config.json"):
@@ -131,6 +132,23 @@ class ConfigManager:
                 return False
         
         return True
+    
+    def should_include_file_contents(self, file_path: Path) -> bool:
+        """
+        Determine if a file's contents should be included based on configuration
+        
+        Args:
+            file_path (Path): Path to the file to check
+            
+        Returns:
+            bool: True if file contents should be included
+        """
+        extensions = self.get("include_file_contents", [])
+        if not extensions:
+            return False
+        
+        file_extension = file_path.suffix.lower()
+        return file_extension in extensions
     
     def print_config(self) -> None:
         """Print current configuration"""

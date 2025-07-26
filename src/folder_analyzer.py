@@ -71,6 +71,46 @@ def print_tree_structure(folder_path, prefix="", output_file=None, config_manage
     # Print the contents
     _print_directory_contents(folder_path, prefix)
 
+def collect_file_contents(folder_path, config_manager):
+    """
+    Collect contents of files matching configured extensions
+    
+    Args:
+        folder_path (Path): Root folder to search
+        config_manager (ConfigManager): Configuration manager instance
+        
+    Returns:
+        List[Tuple[str, str]]: List of (relative_path, content) tuples
+    """
+    folder_path = Path(folder_path)
+    file_contents = []
+    
+    try:
+        for file_path in folder_path.rglob("*"):
+            if file_path.is_file() and config_manager.should_include_file(file_path) and config_manager.should_include_file_contents(file_path):
+                try:
+                    # Try to read the file as text
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    
+                    # Get relative path from the root folder
+                    relative_path = file_path.relative_to(folder_path)
+                    file_contents.append((str(relative_path), content))
+                    
+                except (UnicodeDecodeError, PermissionError) as e:
+                    # Skip binary files or files we can't read
+                    relative_path = file_path.relative_to(folder_path)
+                    file_contents.append((str(relative_path), f"[Could not read file: {e}]"))
+                except Exception as e:
+                    # Skip any other problematic files
+                    relative_path = file_path.relative_to(folder_path)
+                    file_contents.append((str(relative_path), f"[Error reading file: {e}]"))
+    
+    except Exception as e:
+        print(f"Warning: Error collecting file contents: {e}")
+    
+    return file_contents
+
 def analyze_folder(target_folder=None, output_folder=None, config_manager=None):
     """
     Analyze the target folder and optionally save results to output folder
@@ -119,6 +159,23 @@ def analyze_folder(target_folder=None, output_folder=None, config_manager=None):
         elif output_file:
             # Only write to file, suppress console output
             print_tree_structure(target_path, output_file=output_file, config_manager=config_manager)
+        
+        # Add file contents to output file if configured
+        if output_file and config_manager.get("include_file_contents", []):
+            file_contents = collect_file_contents(target_path, config_manager)
+            
+            if file_contents:
+                output_file.write("\n" + "=" * 60 + "\n")
+                output_file.write("FILE CONTENTS\n")
+                output_file.write("=" * 60 + "\n\n")
+                
+                for relative_path, content in file_contents:
+                    output_file.write(f"{relative_path} contents:\n")
+                    output_file.write("-" * 40 + "\n")
+                    output_file.write(content)
+                    if not content.endswith('\n'):
+                        output_file.write('\n')
+                    output_file.write("-" * 40 + "\n\n")
     finally:
         if output_file:
             output_file.close()
@@ -219,4 +276,6 @@ def create_argument_parser():
                        help="Include __pycache__ files and folders (overrides config)")
     parser.add_argument("--no-console", action="store_true",
                        help="Suppress console output (only save to file)")
+    parser.add_argument("--include-contents", nargs="*", metavar="EXT",
+                       help="Include file contents for specified extensions (e.g., --include-contents .py .json)")
     return parser

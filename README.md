@@ -12,6 +12,7 @@ A Python tool that analyzes folder structures and generates tree-like visualizat
 - 🔧 **Programmatic API**: Can be used as a Python module for integration into other projects
 - 📊 **Statistical Analysis**: Provides summary statistics about directory contents
 - 🧪 **Interactive Testing**: Includes Jupyter notebook for testing and experimentation
+- 📄 **File Contents Inclusion**: Optionally include raw file contents for specified extensions in output files
 - 🎛️ **Command Line Overrides**: Override configuration settings from command line
 
 ## Installation
@@ -38,7 +39,8 @@ The tool uses a `config.json` file for default settings. If it doesn't exist, it
     "include_pycache": false,
     "output_to_console": true,
     "output_to_file": true,
-    "output_filename": "folder_structure.txt"
+    "output_filename": "folder_structure.txt",
+    "include_file_contents": [".py", ".json", ".md", ".txt"]
 }
 ```
 
@@ -50,6 +52,7 @@ The tool uses a `config.json` file for default settings. If it doesn't exist, it
 - `output_to_console`: Print results to console
 - `output_to_file`: Save results to file
 - `output_filename`: Name of the output file
+- `include_file_contents`: List of file extensions to include contents for (e.g., `[".py", ".json"]`)
 
 ### Command Line Interface
 
@@ -93,6 +96,16 @@ python main.py --no-console -o "./output"
 python main.py -c "my_config.json"
 ```
 
+**Include file contents for specific extensions:**
+```bash
+python main.py --include-contents .py .json
+```
+
+**Disable file contents inclusion:**
+```bash
+python main.py --include-contents
+```
+
 ### Programmatic Usage
 
 ```python
@@ -117,6 +130,7 @@ structure = get_folder_structure_as_string("C:/some/folder")
 
 ## Example Output
 
+**Folder Structure:**
 ```
 my_project/
 ├── src/
@@ -127,6 +141,40 @@ my_project/
 ├── docs/
 │   └── README.md
 └── requirements.txt
+```
+
+**With File Contents (when enabled):**
+```
+my_project/
+├── src/
+│   ├── __init__.py
+│   └── main.py
+├── requirements.txt
+
+============================================================
+FILE CONTENTS
+============================================================
+
+src/__init__.py contents:
+----------------------------------------
+# Package initialization
+from .main import main_function
+----------------------------------------
+
+src/main.py contents:
+----------------------------------------
+def main_function():
+    print("Hello, World!")
+
+if __name__ == "__main__":
+    main_function()
+----------------------------------------
+
+requirements.txt contents:
+----------------------------------------
+requests>=2.28.0
+pathlib
+----------------------------------------
 ```
 
 ## Project Structure

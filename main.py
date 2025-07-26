@@ -33,6 +33,9 @@ def main():
         config_manager.set("output_to_console", False)
         config_manager.set("output_to_file", True)
     
+    if args.include_contents is not None:
+        config_manager.set("include_file_contents", args.include_contents)
+    
     # Update config with command line arguments
     config_manager.update_from_args(args.target_folder, args.output_folder)
     

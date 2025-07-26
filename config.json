@@ -5,5 +5,6 @@
     "include_pycache": false,
     "output_to_console": true,
     "output_to_file": true,
-    "output_filename": "folder_structure.txt"
+    "output_filename": "folder_structure.txt",
+    "include_file_contents": [".py", ".json", ".md", ".txt"]
 }
