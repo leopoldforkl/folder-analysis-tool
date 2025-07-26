@@ -8,11 +8,17 @@ The actual functionality is implemented in the src package.
 
 from src.folder_analyzer import analyze_folder, create_argument_parser
 from src.config_manager import ConfigManager
+from src.gui import run_gui
 
 def main():
     """Main function that handles command line arguments and calls the analyzer"""
     parser = create_argument_parser()
     args = parser.parse_args()
+    
+    # If GUI mode is requested, launch the GUI
+    if args.gui:
+        run_gui()
+        return
     
     # Load configuration
     config_manager = ConfigManager(args.config_file)

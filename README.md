@@ -5,6 +5,7 @@ A Python tool that analyzes folder structures and generates tree-like visualizat
 ## Features
 
 - 🌳 **Tree Visualization**: Displays folder structures in a clean, tree-like format
+- 🖥️ **GUI Interface**: Interactive 3-step wizard for folder analysis with visual file selection
 - ⚙️ **Configuration File**: JSON-based configuration for default settings
 - 📁 **Hidden File Filtering**: Configurable inclusion/exclusion of hidden files and folders (starting with `.`)
 - � **Python Cache Control**: Configurable inclusion/exclusion of `__pycache__` directories and `.pyc` files
@@ -56,6 +57,11 @@ The tool uses a `config.json` file for default settings. If it doesn't exist, it
 
 ### Command Line Interface
 
+**Launch GUI Mode:**
+```bash
+python main.py --gui
+```
+
 **Show current configuration:**
 ```bash
 python main.py --show-config
@@ -105,6 +111,32 @@ python main.py --include-contents .py .json
 ```bash
 python main.py --include-contents
 ```
+
+### GUI Mode
+
+The tool includes a graphical user interface that provides an interactive 3-step wizard for folder analysis:
+
+**Step 1: Output Selection**
+- Choose the output directory where analysis results will be saved
+- Select the output filename
+
+**Step 2: Target Folder & File Selection**
+- Browse and select the target folder to analyze
+- Navigate through the folder structure using an interactive tree view
+- Select specific files or entire directories using checkboxes
+- Visual feedback shows selection status
+
+**Step 3: Content Options**
+- Choose file extensions for content inclusion
+- Configure filtering options (hidden files, __pycache__, etc.)
+- Review and confirm settings before analysis
+
+**Launch GUI:**
+```bash
+python main.py --gui
+```
+
+The GUI provides the same functionality as the command line interface but with an intuitive visual interface for users who prefer point-and-click interaction.
 
 ### Programmatic Usage
 

@@ -278,4 +278,6 @@ def create_argument_parser():
                        help="Suppress console output (only save to file)")
     parser.add_argument("--include-contents", nargs="*", metavar="EXT",
                        help="Include file contents for specified extensions (e.g., --include-contents .py .json)")
+    parser.add_argument("--gui", action="store_true",
+                       help="Launch GUI mode for interactive folder analysis")
     return parser
