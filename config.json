@@ -1,0 +1,9 @@
+{
+    "input_directory": ".",
+    "output_directory": "./output",
+    "include_hidden_files": false,
+    "include_pycache": false,
+    "output_to_console": true,
+    "output_to_file": true,
+    "output_filename": "folder_structure.txt"
+}

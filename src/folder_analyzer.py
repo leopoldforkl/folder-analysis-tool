@@ -1,8 +1,9 @@
 import os
 import argparse
 from pathlib import Path
+from .config_manager import ConfigManager
 
-def print_tree_structure(folder_path, prefix="", output_file=None):
+def print_tree_structure(folder_path, prefix="", output_file=None, config_manager=None):
     """
     Print the directory structure in a tree format
     
@@ -10,6 +11,7 @@ def print_tree_structure(folder_path, prefix="", output_file=None):
         folder_path (str or Path): Path to the folder to analyze
         prefix (str): Prefix for tree formatting
         output_file (file object): Optional file to write output to
+        config_manager (ConfigManager, optional): Configuration manager instance
     """
     folder_path = Path(folder_path)
     
@@ -21,11 +23,15 @@ def print_tree_structure(folder_path, prefix="", output_file=None):
         print(f"Error: The path '{folder_path}' is not a directory.")
         return
     
+    # Use default config if none provided
+    if config_manager is None:
+        config_manager = ConfigManager()
+    
     def _print_directory_contents(dir_path, current_prefix=""):
         """Internal function to print directory contents without printing the directory name"""
-        # Get all items in the directory, excluding hidden files/folders (starting with .)
+        # Get all items in the directory, applying config-based filtering
         try:
-            items = sorted([item for item in dir_path.iterdir() if not item.name.startswith('.')], 
+            items = sorted([item for item in dir_path.iterdir() if config_manager.should_include_file(item)], 
                           key=lambda x: (x.is_file(), x.name.lower()))
         except PermissionError:
             error_line = f"{current_prefix}├── [Permission Denied]"
@@ -65,21 +71,34 @@ def print_tree_structure(folder_path, prefix="", output_file=None):
     # Print the contents
     _print_directory_contents(folder_path, prefix)
 
-def analyze_folder(target_folder, output_folder=None):
+def analyze_folder(target_folder=None, output_folder=None, config_manager=None):
     """
     Analyze the target folder and optionally save results to output folder
     
     Args:
-        target_folder (str): Path to the target folder to analyze
+        target_folder (str, optional): Path to the target folder to analyze
         output_folder (str, optional): Path to output folder where results will be saved
+        config_manager (ConfigManager, optional): Configuration manager instance
         
     Returns:
         str: Path to the output file if output_folder is specified, None otherwise
     """
+    # Use default config if none provided
+    if config_manager is None:
+        config_manager = ConfigManager()
+    
+    # Use config values if parameters not provided
+    if target_folder is None:
+        target_folder = config_manager.get("input_directory", ".")
+    
+    if output_folder is None and config_manager.get("output_to_file", False):
+        output_folder = config_manager.get("output_directory", "./output")
+    
     target_path = Path(target_folder)
     
-    print(f"Analyzing folder structure of: {target_path.absolute()}")
-    print("=" * 50)
+    if config_manager.get("output_to_console", True):
+        print(f"Analyzing folder structure of: {target_path.absolute()}")
+        print("=" * 50)
     
     output_file = None
     output_file_path = None
@@ -87,31 +106,42 @@ def analyze_folder(target_folder, output_folder=None):
     if output_folder:
         output_path = Path(output_folder)
         output_path.mkdir(parents=True, exist_ok=True)
-        output_file_path = output_path / "folder_structure.txt"
+        filename = config_manager.get("output_filename", "folder_structure.txt")
+        output_file_path = output_path / filename
         output_file = open(output_file_path, 'w', encoding='utf-8')
-        print(f"Results will be saved to: {output_file_path.absolute()}")
-        print("=" * 50)
+        if config_manager.get("output_to_console", True):
+            print(f"Results will be saved to: {output_file_path.absolute()}")
+            print("=" * 50)
     
     try:
-        print_tree_structure(target_path, output_file=output_file)
+        if config_manager.get("output_to_console", True):
+            print_tree_structure(target_path, output_file=output_file, config_manager=config_manager)
+        elif output_file:
+            # Only write to file, suppress console output
+            print_tree_structure(target_path, output_file=output_file, config_manager=config_manager)
     finally:
         if output_file:
             output_file.close()
-            print("=" * 50)
-            print(f"Analysis complete! Results saved to: {output_file_path.absolute()}")
+            if config_manager.get("output_to_console", True):
+                print("=" * 50)
+                print(f"Analysis complete! Results saved to: {output_file_path.absolute()}")
     
     return str(output_file_path) if output_file_path else None
 
-def get_folder_structure_as_string(target_folder):
+def get_folder_structure_as_string(target_folder, config_manager=None):
     """
     Get the folder structure as a string without printing to console
     
     Args:
         target_folder (str): Path to the target folder to analyze
+        config_manager (ConfigManager, optional): Configuration manager instance
         
     Returns:
         str: The folder structure as a formatted string
     """
+    # Use default config if none provided
+    if config_manager is None:
+        config_manager = ConfigManager()
     from io import StringIO
     
     # Capture output in a string buffer
@@ -119,9 +149,9 @@ def get_folder_structure_as_string(target_folder):
     
     def _capture_directory_contents(dir_path, current_prefix=""):
         """Internal function to capture directory contents without printing the directory name"""
-        # Get all items in the directory, excluding hidden files/folders (starting with .)
+        # Get all items in the directory, applying config-based filtering
         try:
-            items = sorted([item for item in dir_path.iterdir() if not item.name.startswith('.')], 
+            items = sorted([item for item in dir_path.iterdir() if config_manager.should_include_file(item)], 
                           key=lambda x: (x.is_file(), x.name.lower()))
         except PermissionError:
             output_buffer.write(f"{current_prefix}├── [Permission Denied]\n")
@@ -176,7 +206,17 @@ def create_argument_parser():
         argparse.ArgumentParser: Configured argument parser
     """
     parser = argparse.ArgumentParser(description="Analyze folder structure and print it in tree format")
-    parser.add_argument("target_folder", help="Path to the target folder to analyze")
+    parser.add_argument("target_folder", nargs="?", help="Path to the target folder to analyze (optional if set in config)")
     parser.add_argument("-o", "--output", dest="output_folder", 
                        help="Path to output folder where results will be saved (optional)")
+    parser.add_argument("-c", "--config", dest="config_file", default="config.json",
+                       help="Path to configuration file (default: config.json)")
+    parser.add_argument("--show-config", action="store_true",
+                       help="Show current configuration and exit")
+    parser.add_argument("--include-hidden", action="store_true",
+                       help="Include hidden files and folders (overrides config)")
+    parser.add_argument("--include-pycache", action="store_true",
+                       help="Include __pycache__ files and folders (overrides config)")
+    parser.add_argument("--no-console", action="store_true",
+                       help="Suppress console output (only save to file)")
     return parser
